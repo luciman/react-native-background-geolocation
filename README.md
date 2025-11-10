@@ -1,75 +1,93 @@
 # @wrdhrd/react-native-background-geolocation
 
-[![npm](https://img.shields.io/npm/v/@wrdhrd/react-native-background-geolocation?style=flat-square)](https://www.npmjs.com/package/@wrdhrd/react-native-background-geolocation)
 
-> Forked from [@drewaker/react-native-background-geolocation](https://github.com/flaviolima9904/react-native-background-geolocation), and this forked from [@emoreno/react-native-background-geolocation](https://github.com/emoreno-94/react-native-background-geolocation), and this forked from [@hariks789/react-native-background-geolocation](https://github.com/hariks789/react-native-background-geolocation) due to inactivity.
+> Forked from [rafwell/wrdhrd_react-native-background-geolocation](https://github.com/rafwell/wrdhrd_react-native-background-geolocation), and this forked from [WrdHrd-Technologies/react-native-background-geolocation](https://github.com/WrdHrd-Technologies/react-native-background-geolocation), and this forked from [@drewaker/react-native-background-geolocation](https://github.com/flaviolima9904/react-native-background-geolocation), and this forked from [@emoreno/react-native-background-geolocation](https://github.com/emoreno-94/react-native-background-geolocation), and this forked from [@hariks789/react-native-background-geolocation](https://github.com/hariks789/react-native-background-geolocation) due to inactivity.
 Original Repo: [@mauron85/react-native-background-geolocation](https://github.com/mauron85/react-native-background-geolocation)
+
 
 ## Installation
 
 ```
-npm i @wrdhrd/react-native-background-geolocation
-```
-
-```
-yarn add @wrdhrd/react-native-background-geolocation
-```
-
-### Automatic setup
-
-Since version 0.60 React Native does linking of modules [automatically](https://github.com/react-native-community/cli/blob/master/docs/autolinking.md). However it does it only for single module.
-As plugin depends on additional 'common' module, it is required to link it with:
-
-```
-node ./node_modules/@wrdhrd/react-native-background-geolocation/scripts/postlink.js
+npm i github:luciman/wrdhrd_react-native-background-geolocation#3.0.4
 ```
 
 ### Manual setup
 
-#### Android setup
+#### Android setup - 2025 RN 0.76
 
 In `android/settings.gradle`
 
 ```gradle
 ...
-include ':@wrdhrd_react-native-background-geolocation-common'
-project(':@wrdhrd_react-native-background-geolocation-common').projectDir = new File(rootProject.projectDir, '../node_modules/@wrdhrd/react-native-background-geolocation/android/common')
-include ':@wrdhrd_react-native-background-geolocation'
-project(':@wrdhrd_react-native-background-geolocation').projectDir = new File(rootProject.projectDir, '../node_modules/@wrdhrd/react-native-background-geolocation/android/lib')
+include ':wrdhrd_react-native-background-geolocation-common'
+project(':wrdhrd_react-native-background-geolocation-common').projectDir = new File(rootProject.projectDir, '../node_modules/@wrdhrd/react-native-background-geolocation/android/common')
+include ':wrdhrd_react-native-background-geolocation'
+project(':wrdhrd_react-native-background-geolocation').projectDir = new File(rootProject.projectDir, '../node_modules/@wrdhrd/react-native-background-geolocation/android/lib')
 ...
 ```
 
 In `android/app/build.gradle`
 
 ```gradle
-dependencies {
+android{
     ...
-    compile project(':@wrdhrd_react-native-background-geolocation')
+    defaultConfig {
+        ...
+        resValue "string", "mauron85_bgloc_account_type", "${applicationId}.mauron85.account"
+    }
     ...
 }
 ```
 
-Register the module (in `MainApplication.java`)
+Register the module (in `MainApplication.kt`)
 
-```java
-import com.marianhello.bgloc.react.BackgroundGeolocationPackage;  // <--- Import Package
-
-public class MainApplication extends Application implements ReactApplication {
+```kotlin
+  import com.marianhello.bgloc.react.BackgroundGeolocationPackage;  
   ...
-  /**
-   * A list of packages used by the app. If the app uses additional views
-   * or modules besides the default ones, add more packages here.
-   */
-  @Override
-  protected List<ReactPackage> getPackages() {
-      return Arrays.<ReactPackage>asList(
-          new MainReactPackage(),
-          new BackgroundGeolocationPackage() // <---- Add the Package
-      );
-  }
-  ...
-}
+ override fun getPackages(): List<ReactPackage> =
+    PackageList(this).packages.apply {
+      // Packages that cannot be autolinked yet can be added manually here, for example:
+      // add(MyReactNativePackage())
+      add(BackgroundGeolocationPackage())
+    }
 ```
+
+In `android/app/src/main/res/values/strings.xml`
+Note: replace yourAplicationId by the same value in android/app/build.gradle
+
+```
+<resources>
+    ...
+    <string name="mauron85_bgloc_content_authority">yourAplicationId.mauron85.bgloc.account</string>
+</resources>
+
+```
+
+In `android/app/src/main/AndroidManifest.xml`
+Note: inside <application></aplication>
+Note 2: replace yourAplicationId by the same value in android/app/build.gradle
+
+```
+ <service
+    android:name="yourAplicationId.mauron85.bgloc.account"
+    android:exported="true">
+    <intent-filter>
+        <action android:name="android.accounts.AccountAuthenticator"/>
+    </intent-filter>
+    <meta-data
+        android:name="android.accounts.AccountAuthenticator"
+        android:resource="@xml/authenticator"/>
+  </service>
+```
+
+Note: outside <application>
+```
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<application>
+    ...
+```
+
 
 #### iOS setup
 
@@ -178,114 +196,114 @@ import { Alert } from 'react-native';
 import BackgroundGeolocation from '@wrdhrd/react-native-background-geolocation';
 
 class BgTracking extends Component {
-  componentDidMount() {
-    BackgroundGeolocation.configure({
-      desiredAccuracy: BackgroundGeolocation.HIGH_ACCURACY,
-      stationaryRadius: 50,
-      distanceFilter: 50,
-      notificationTitle: 'Background tracking',
-      notificationText: 'enabled',
-      debug: true,
-      startOnBoot: false,
-      stopOnTerminate: true,
-      locationProvider: BackgroundGeolocation.ACTIVITY_PROVIDER,
-      interval: 10000,
-      fastestInterval: 5000,
-      activitiesInterval: 10000,
-      stopOnStillActivity: false,
-      url: 'http://192.168.81.15:3000/location',
-      httpHeaders: {
-        'X-FOO': 'bar'
-      },
-      // customize post properties
-      postTemplate: {
-        lat: '@latitude',
-        lon: '@longitude',
-        foo: 'bar' // you can also add your own properties
-      }
-    });
+    componentDidMount() {
+        BackgroundGeolocation.configure({
+            desiredAccuracy: BackgroundGeolocation.HIGH_ACCURACY,
+            stationaryRadius: 50,
+            distanceFilter: 50,
+            notificationTitle: 'Background tracking',
+            notificationText: 'enabled',
+            debug: true,
+            startOnBoot: false,
+            stopOnTerminate: true,
+            locationProvider: BackgroundGeolocation.ACTIVITY_PROVIDER,
+            interval: 10000,
+            fastestInterval: 5000,
+            activitiesInterval: 10000,
+            stopOnStillActivity: false,
+            url: 'http://192.168.81.15:3000/location',
+            httpHeaders: {
+                'X-FOO': 'bar'
+            },
+            // customize post properties
+            postTemplate: {
+                lat: '@latitude',
+                lon: '@longitude',
+                foo: 'bar' // you can also add your own properties
+            }
+        });
 
-    BackgroundGeolocation.on('location', (location) => {
-      // handle your locations here
-      // to perform long running operation on iOS
-      // you need to create background task
-      BackgroundGeolocation.startTask(taskKey => {
-        // execute long running task
-        // eg. ajax post location
-        // IMPORTANT: task has to be ended by endTask
-        BackgroundGeolocation.endTask(taskKey);
-      });
-    });
+        BackgroundGeolocation.on('location', (location) => {
+            // handle your locations here
+            // to perform long running operation on iOS
+            // you need to create background task
+            BackgroundGeolocation.startTask(taskKey => {
+                // execute long running task
+                // eg. ajax post location
+                // IMPORTANT: task has to be ended by endTask
+                BackgroundGeolocation.endTask(taskKey);
+            });
+        });
 
-    BackgroundGeolocation.on('stationary', (stationaryLocation) => {
-      // handle stationary locations here
-      Actions.sendLocation(stationaryLocation);
-    });
+        BackgroundGeolocation.on('stationary', (stationaryLocation) => {
+            // handle stationary locations here
+            Actions.sendLocation(stationaryLocation);
+        });
 
-    BackgroundGeolocation.on('error', (error) => {
-      console.log('[ERROR] BackgroundGeolocation error:', error);
-    });
+        BackgroundGeolocation.on('error', (error) => {
+            console.log('[ERROR] BackgroundGeolocation error:', error);
+        });
 
-    BackgroundGeolocation.on('start', () => {
-      console.log('[INFO] BackgroundGeolocation service has been started');
-    });
+        BackgroundGeolocation.on('start', () => {
+            console.log('[INFO] BackgroundGeolocation service has been started');
+        });
 
-    BackgroundGeolocation.on('stop', () => {
-      console.log('[INFO] BackgroundGeolocation service has been stopped');
-    });
+        BackgroundGeolocation.on('stop', () => {
+            console.log('[INFO] BackgroundGeolocation service has been stopped');
+        });
 
-    BackgroundGeolocation.on('authorization', (status) => {
-      console.log('[INFO] BackgroundGeolocation authorization status: ' + status);
-      if (status !== BackgroundGeolocation.AUTHORIZED) {
-        // we need to set delay or otherwise alert may not be shown
-        setTimeout(() =>
-          Alert.alert('App requires location tracking permission', 'Would you like to open app settings?', [
-            { text: 'Yes', onPress: () => BackgroundGeolocation.showAppSettings() },
-            { text: 'No', onPress: () => console.log('No Pressed'), style: 'cancel' }
-          ]), 1000);
-      }
-    });
+        BackgroundGeolocation.on('authorization', (status) => {
+            console.log('[INFO] BackgroundGeolocation authorization status: ' + status);
+            if (status !== BackgroundGeolocation.AUTHORIZED) {
+                // we need to set delay or otherwise alert may not be shown
+                setTimeout(() =>
+                    Alert.alert('App requires location tracking permission', 'Would you like to open app settings?', [
+                        { text: 'Yes', onPress: () => BackgroundGeolocation.showAppSettings() },
+                        { text: 'No', onPress: () => console.log('No Pressed'), style: 'cancel' }
+                    ]), 1000);
+            }
+        });
 
-    BackgroundGeolocation.on('background', () => {
-      console.log('[INFO] App is in background');
-    });
+        BackgroundGeolocation.on('background', () => {
+            console.log('[INFO] App is in background');
+        });
 
-    BackgroundGeolocation.on('foreground', () => {
-      console.log('[INFO] App is in foreground');
-    });
+        BackgroundGeolocation.on('foreground', () => {
+            console.log('[INFO] App is in foreground');
+        });
 
-    BackgroundGeolocation.on('abort_requested', () => {
-      console.log('[INFO] Server responded with 285 Updates Not Required');
+        BackgroundGeolocation.on('abort_requested', () => {
+            console.log('[INFO] Server responded with 285 Updates Not Required');
 
-      // Here we can decide whether we want stop the updates or not.
-      // If you've configured the server to return 285, then it means the server does not require further update.
-      // So the normal thing to do here would be to `BackgroundGeolocation.stop()`.
-      // But you might be counting on it to receive location updates in the UI, so you could just reconfigure and set `url` to null.
-    });
+            // Here we can decide whether we want stop the updates or not.
+            // If you've configured the server to return 285, then it means the server does not require further update.
+            // So the normal thing to do here would be to `BackgroundGeolocation.stop()`.
+            // But you might be counting on it to receive location updates in the UI, so you could just reconfigure and set `url` to null.
+        });
 
-    BackgroundGeolocation.on('http_authorization', () => {
-      console.log('[INFO] App needs to authorize the http requests');
-    });
+        BackgroundGeolocation.on('http_authorization', () => {
+            console.log('[INFO] App needs to authorize the http requests');
+        });
 
-    BackgroundGeolocation.checkStatus(status => {
-      console.log('[INFO] BackgroundGeolocation service is running', status.isRunning);
-      console.log('[INFO] BackgroundGeolocation services enabled', status.locationServicesEnabled);
-      console.log('[INFO] BackgroundGeolocation auth status: ' + status.authorization);
+        BackgroundGeolocation.checkStatus(status => {
+            console.log('[INFO] BackgroundGeolocation service is running', status.isRunning);
+            console.log('[INFO] BackgroundGeolocation services enabled', status.locationServicesEnabled);
+            console.log('[INFO] BackgroundGeolocation auth status: ' + status.authorization);
 
-      // you don't need to check status before start (this is just the example)
-      if (!status.isRunning) {
-        BackgroundGeolocation.start(); //triggers start on start event
-      }
-    });
+            // you don't need to check status before start (this is just the example)
+            if (!status.isRunning) {
+                BackgroundGeolocation.start(); //triggers start on start event
+            }
+        });
 
-    // you can also just start without checking for status
-    // BackgroundGeolocation.start();
-  }
+        // you can also just start without checking for status
+        // BackgroundGeolocation.start();
+    }
 
-  componentWillUnmount() {
-    // unregister all event listeners
-    BackgroundGeolocation.removeAllListeners();
-  }
+    componentWillUnmount() {
+        // unregister all event listeners
+        BackgroundGeolocation.removeAllListeners();
+    }
 }
 
 export default BgTracking;
@@ -449,9 +467,9 @@ This method is useful for initial rendering of user location on a map just after
 
 ```javascript
 BackgroundGeolocation.getLocations(
-  function (locations) {
-    console.log(locations);
-  }
+    function (locations) {
+        console.log(locations);
+    }
 );
 ```
 
