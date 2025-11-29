@@ -53,23 +53,32 @@ public class BackgroundGeolocationFacade {
     public static final int AUTHORIZATION_AUTHORIZED = 1;
     public static final int AUTHORIZATION_DENIED = 0;
     
+    // PATCH: Removed ACTIVITY_RECOGNITION from initial permissions check
+    // This prevents the service from stopping when user denies ACTIVITY_RECOGNITION
+    // The LocationProviderFactory will handle the fallback to DISTANCE_FILTER_PROVIDER
     public static final String[] INITIALPERMISSIONS = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ? new String[]{
-            Manifest.permission.ACTIVITY_RECOGNITION,
+            // Manifest.permission.ACTIVITY_RECOGNITION, - REMOVED
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION
     }:  new String[]{
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION
     };
+    // PATCH: Empty BACKGROUNDLOCATIONPERMISSION array
+    // ACCESS_BACKGROUND_LOCATION is NOT required when using Foreground Service (startForeground: true)
+    // The service runs with a persistent notification, so the user is aware of location tracking
     public static final String[] BACKGROUNDLOCATIONPERMISSION = new String[]{
-            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            // Manifest.permission.ACCESS_BACKGROUND_LOCATION - REMOVED
     };
 
+    // PATCH: Removed ACTIVITY_RECOGNITION from PERMISSIONS check
+    // This allows the service to run even without ACTIVITY_RECOGNITION permission
+    // The LocationProviderFactory will handle the fallback to DISTANCE_FILTER_PROVIDER
     public static final String[] PERMISSIONS = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ? new String[]{
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_BACKGROUND_LOCATION,
-            Manifest.permission.ACTIVITY_RECOGNITION
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            // Manifest.permission.ACTIVITY_RECOGNITION - REMOVED
     }
     :
     new String[]{

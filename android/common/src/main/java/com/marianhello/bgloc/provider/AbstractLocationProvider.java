@@ -52,9 +52,15 @@ public abstract class AbstractLocationProvider implements LocationProvider {
         mContext = context;
         logger = LoggerManager.getLogger(getClass());
         this.PROVIDER_ID=provider_id;
+        
+        // PATCH: If we reach here with FUSED_PROVIDER, it means LocationProviderFactory verified
+        // that ACTIVITY_RECOGNITION permission is granted (or not required on Android < 10).
+        // Safe to initialize ActivityTransitionService.
         if (provider_id == Config.FUSED_PROVIDER) {
+            logger.info("Initializing FUSED_PROVIDER with ActivityTransitionService");
             mActivityTransitionDetectionService = new ActivityTransitionService(mContext);
         }
+        
         logger.info("Creating {}", getClass().getSimpleName());
     }
 
