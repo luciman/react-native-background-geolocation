@@ -4,6 +4,15 @@
   "description": "Optimized background location tracking",
   "main": "./index.js",
   "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "android/",
+    "ios/",
+    "scripts/",
+    "react-native.config.js",
+    "@wrdhrd_react-native-background-geolocation.podspec"
+  ],
   "scripts": {
     "link": "@wrdhrd/react-native-background-geolocation/scripts/postlink.js",
     "unlink": "@wrdhrd/react-native-background-geolocation/scripts/postunlink.js",
