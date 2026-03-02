@@ -10,11 +10,6 @@ This is a new class
 package com.marianhello.bgloc.provider;
 
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.os.Build;
-import android.util.Log;
-
-import androidx.core.content.ContextCompat;
 
 import com.marianhello.bgloc.Config;
 import com.tenforwardconsulting.bgloc.DistanceFilterLocationProvider;
@@ -34,37 +29,7 @@ public class LocationProviderFactory {
 
     public LocationProvider getInstance (Integer locationProvider) {
         LocationProvider provider;
-        Integer effectiveProvider = locationProvider;
-        
-        // PATCH: If FUSED_PROVIDER is requested but ACTIVITY_RECOGNITION permission is not granted,
-        // fallback to DISTANCE_FILTER_PROVIDER (which doesn't require ACTIVITY_RECOGNITION)
-        if (locationProvider == Config.FUSED_PROVIDER) {
-            boolean hasActivityRecognitionPermission = false;
-            
-            // Check for ACTIVITY_RECOGNITION permission on Android 10+ (API 29+)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                hasActivityRecognitionPermission = ContextCompat.checkSelfPermission(
-                    mContext, 
-                    android.Manifest.permission.ACTIVITY_RECOGNITION
-                ) == PackageManager.PERMISSION_GRANTED;
-                
-                if (!hasActivityRecognitionPermission) {
-                    Log.w("LocationProviderFactory", 
-                        "FUSED_PROVIDER requested but ACTIVITY_RECOGNITION permission not granted. " +
-                        "Falling back to DISTANCE_FILTER_PROVIDER");
-                    effectiveProvider = Config.DISTANCE_FILTER_PROVIDER;
-                } else {
-                    Log.i("LocationProviderFactory", 
-                        "FUSED_PROVIDER requested with ACTIVITY_RECOGNITION permission granted");
-                }
-            } else {
-                // On Android 9 and below, ACTIVITY_RECOGNITION is not required
-                Log.i("LocationProviderFactory", 
-                    "FUSED_PROVIDER requested on Android < 10 (no ACTIVITY_RECOGNITION required)");
-            }
-        }
-        
-        switch (effectiveProvider) {
+        switch (locationProvider) {
             case Config.DISTANCE_FILTER_PROVIDER:
                 provider = new DistanceFilterLocationProvider(mContext);
                 break;
