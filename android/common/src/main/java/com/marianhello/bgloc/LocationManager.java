@@ -48,23 +48,34 @@ public class LocationManager {
         permissionManager.checkPermissions(Arrays.asList(PERMISSIONS), new PermissionManager.PermissionRequestListener() {
             @Override
             public void onPermissionGranted() {
-                try {
-                    Location currentLocation = getCurrentLocationNoCheck(timeout, maximumAge, enableHighAccuracy);
-                    promise.set(currentLocation);
-                } catch (TimeoutException e) {
-                    promise.setError(e);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+                resolveCurrentLocation(promise, timeout, maximumAge, enableHighAccuracy);
             }
 
             @Override
             public void onPermissionDenied() {
-                promise.setError(new PermissionDeniedException());
+                // On Android 12+, user may have chosen "Approximate" (coarse only).
+                // Check if at least coarse is available.
+                if (androidx.core.content.ContextCompat.checkSelfPermission(mContext,
+                        Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    resolveCurrentLocation(promise, timeout, maximumAge, false);
+                } else {
+                    promise.setError(new PermissionDeniedException());
+                }
             }
         });
 
         return promise;
+    }
+
+    private void resolveCurrentLocation(Promise<Location> promise, int timeout, long maximumAge, boolean enableHighAccuracy) {
+        try {
+            Location currentLocation = getCurrentLocationNoCheck(timeout, maximumAge, enableHighAccuracy);
+            promise.set(currentLocation);
+        } catch (TimeoutException e) {
+            promise.setError(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /**

@@ -61,13 +61,7 @@ public class BackgroundGeolocationFacade {
             Manifest.permission.ACCESS_BACKGROUND_LOCATION
     };
 
-    public static final String[] PERMISSIONS = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ? new String[]{
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_BACKGROUND_LOCATION
-    }
-    :
-    new String[]{
+    public static final String[] PERMISSIONS = new String[]{
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION,
     };
@@ -235,45 +229,54 @@ public class BackgroundGeolocationFacade {
          permissionManager.checkPermissions(Arrays.asList(INITIALPERMISSIONS), new PermissionManager.PermissionRequestListener() {
             @Override
             public void onPermissionGranted() {
-                logger.info("User granted initial requested permissions");
-
-                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
-                    permissionManager.checkPermissions(Arrays.asList(BACKGROUNDLOCATIONPERMISSION), new PermissionManager.PermissionRequestListener() {
-                        @Override
-                        public void onPermissionGranted() {
-                            logger.info("User granted background location permissions");
-                            // watch location mode changes
-                            registerLocationModeChangeReceiver();
-                            registerServiceBroadcast();
-                            startBackgroundService();
-                        }
-
-                        @Override
-                        public void onPermissionDenied() {
-                            logger.info("User denied background location permissions");
-                            if (mDelegate != null) {
-                                mDelegate.onAuthorizationChanged(BackgroundGeolocationFacade.AUTHORIZATION_DENIED);
-                            }
-                        }
-                    });
-                }
-                else {
-                    // watch location mode changes
-                    registerLocationModeChangeReceiver();
-                    registerServiceBroadcast();
-                    startBackgroundService();
-                }
-                
+                logger.info("User granted precise location permissions");
+                startServiceWithOptionalBackground(permissionManager);
             }
 
             @Override
             public void onPermissionDenied() {
-                logger.info("User denied requested permissions");
-                if (mDelegate != null) {
-                    mDelegate.onAuthorizationChanged(BackgroundGeolocationFacade.AUTHORIZATION_DENIED);
+                // On Android 12+, user may have chosen "Approximate" location,
+                // which grants only COARSE but denies FINE. Check if at least
+                // coarse location is available - that's enough for recording.
+                if (hasPermissions(getContext(), new String[]{ Manifest.permission.ACCESS_COARSE_LOCATION })) {
+                    logger.info("User granted approximate location - starting with reduced accuracy");
+                    startServiceWithOptionalBackground(permissionManager);
+                } else {
+                    logger.info("User denied all location permissions");
+                    if (mDelegate != null) {
+                        mDelegate.onAuthorizationChanged(BackgroundGeolocationFacade.AUTHORIZATION_DENIED);
+                    }
                 }
             }
         });
+    }
+
+    /**
+     * Start the location service. Background location permission is optional:
+     * a foreground service with FOREGROUND_SERVICE_TYPE_LOCATION receives location
+     * updates even without ACCESS_BACKGROUND_LOCATION (same approach as Strava/AllTrails).
+     */
+    private void startServiceWithOptionalBackground(PermissionManager permissionManager) {
+        // Try to get background location (non-blocking, optional)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            permissionManager.checkPermissions(Arrays.asList(BACKGROUNDLOCATIONPERMISSION), new PermissionManager.PermissionRequestListener() {
+                @Override
+                public void onPermissionGranted() {
+                    logger.info("Background location granted - full background tracking available");
+                }
+
+                @Override
+                public void onPermissionDenied() {
+                    logger.info("Background location denied - foreground service will handle location updates");
+                }
+            });
+        }
+
+        // Always start the service regardless of background location permission.
+        // The foreground service notification keeps location updates active.
+        registerLocationModeChangeReceiver();
+        registerServiceBroadcast();
+        startBackgroundService();
     }
 
     public void stop() {
@@ -497,7 +500,9 @@ public class BackgroundGeolocationFacade {
     }
 
     public boolean hasPermissions() {
-        return hasPermissions(getContext(), PERMISSIONS);
+        // User is authorized if at least coarse location is granted.
+        // Fine and background location are enhancements, not requirements.
+        return hasPermissions(getContext(), new String[]{ Manifest.permission.ACCESS_COARSE_LOCATION });
     }
 
     public boolean locationServicesEnabled() throws PluginException {
