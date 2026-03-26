@@ -257,23 +257,10 @@ public class BackgroundGeolocationFacade {
      * updates even without ACCESS_BACKGROUND_LOCATION (same approach as Strava/AllTrails).
      */
     private void startServiceWithOptionalBackground(PermissionManager permissionManager) {
-        // Try to get background location (non-blocking, optional)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            permissionManager.checkPermissions(Arrays.asList(BACKGROUNDLOCATIONPERMISSION), new PermissionManager.PermissionRequestListener() {
-                @Override
-                public void onPermissionGranted() {
-                    logger.info("Background location granted - full background tracking available");
-                }
-
-                @Override
-                public void onPermissionDenied() {
-                    logger.info("Background location denied - foreground service will handle location updates");
-                }
-            });
-        }
-
-        // Always start the service regardless of background location permission.
-        // The foreground service notification keeps location updates active.
+        // Start the service without requesting background location.
+        // The foreground service notification keeps location updates active even without
+        // ACCESS_BACKGROUND_LOCATION (same approach as Strava/AllTrails).
+        // Background location is requested explicitly by the user via the in-app popup.
         registerLocationModeChangeReceiver();
         registerServiceBroadcast();
         startBackgroundService();
